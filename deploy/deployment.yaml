@@ -1,0 +1,68 @@
+---
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: fortigate-lb-ctlr
+  labels:
+    app: fortigate-lb-ctlr
+  namespace: kube-system
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: fortigate-lb-ctlr
+  template:
+    metadata:
+      labels:
+        app: fortigate-lb-ctlr
+    spec:
+      serviceAccountName: fortigate-lb-ctlr
+      containers:
+      - name: fortigate-lb-ctlr
+        image: fortigate-lb-ctlr:latest
+        env:
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: LOG_LEVEL
+        - name: FORTIGATE_URL
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_URL
+        - name: FORTIGATE_DEBUG
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_URL
+        - name: CONTROLLER_TAG
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: CONTROLLER_TAG
+        - name: FORTIGATE_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_API_KEY
+        - name: FORTIGATE_USER
+          valueFrom:
+            secretKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_USER
+        - name: FORTIGATE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_PASSWORD
+        - name: FORTIGATE_REALSERVER_LIMIT
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_REALSERVER_LIMIT
+        - name: FORTIGATE_MANAGE_POLICY
+          valueFrom:
+            configMapKeyRef:
+              name: fortigate-lb-ctlr
+              key: FORTIGATE_MANAGE_POLICY
