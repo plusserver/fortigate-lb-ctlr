@@ -19,7 +19,7 @@ spec:
       serviceAccountName: fortigate-lb-ctlr
       containers:
       - name: fortigate-lb-ctlr
-        image: fortigate-lb-ctlr:latest
+        image: nexinto/fortigate-lb-ctlr:latest
         env:
         - name: LOG_LEVEL
           valueFrom:
