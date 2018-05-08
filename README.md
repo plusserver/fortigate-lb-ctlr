@@ -8,6 +8,11 @@ fortigate-lb-ctlr creates a virtual server for every Kubernetes Service that nee
 This works similar to a Service with type `Loadbalancer`. Every service will get its own IP address picked from an
 address range that is managed by the controller.
 
+Tested with Fortigate Versions:
+
+ * v5.4.6
+ * v5.6.3
+
 ## Getting started
 
 First, choose a network for your virtual servers and make sure it is routed to your Fortigate.
