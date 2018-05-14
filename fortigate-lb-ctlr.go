@@ -24,6 +24,11 @@ import (
 	ipamclientset "github.com/Nexinto/k8s-ipam/pkg/client/clientset/versioned"
 )
 
+const (
+	// fortigate provider
+	AnnNxVIPProviderFortigate = "fortigate"
+)
+
 func main() {
 
 	flag.Parse()
@@ -122,38 +127,34 @@ func New(clientset kubernetes.Interface, ipamclient ipamclientset.Interface, fg 
 	return c
 }
 
-func (c *Controller) IpAddressCreatedOrUpdated(addr *ipamv1.IpAddress) error {
-	log.Debugf("processing address %s-%s", addr.Namespace, addr.Name)
-	if addr.OwnerReferences == nil || len(addr.OwnerReferences) != 1 || addr.OwnerReferences[0].Kind != "Service" {
-		return nil
-	}
-
-	if addr.Status.Address != "" {
-		// The address object has changed and it has an address, so we wake up the service
-
-		serviceName := addr.Namespace + "/" + addr.OwnerReferences[0].Name
-
-		log.Debugf("adding service '%s' to queue", serviceName)
-
-		c.ServiceQueue.Add(serviceName)
-	}
-
+func (c *Controller) IpAddressCreatedOrUpdated(address *ipamv1.IpAddress) error {
+	log.Debugf("processing address '%s-%s'", address.Namespace, address.Name)
+	lbutil.IpAddressCreatedOrUpdated(c.ServiceQueue, address)
 	return nil
 }
 
-func (c *Controller) IpAddressDeleted(addr *ipamv1.IpAddress) error {
-	log.Debugf("processing deleted address %s-%s", addr.Namespace, addr.Name)
-	return nil
+func (c *Controller) IpAddressDeleted(address *ipamv1.IpAddress) error {
+	log.Debugf("processing deleted address '%s-%s'", address.Namespace, address.Name)
+	return lbutil.IpAddressDeleted(c.Kubernetes, c.ServiceLister, address)
 }
 
 func (c *Controller) ServiceCreatedOrUpdated(service *corev1.Service) error {
 	log.Debugf("processing service '%s-%s'", service.Namespace, service.Name)
 
-	ok, newservice, err := lbutil.EnsureVIP(c.Kubernetes, c.IpamClient, c.IpAddressLister, service, lbutil.AnnNxVIPProviderFortigate, c.RequireTag)
+	ok, needsUpdate, newservice, err := lbutil.EnsureVIP(c.Kubernetes, c.IpamClient, c.IpAddressLister, service, AnnNxVIPProviderFortigate, c.RequireTag)
 	if err != nil {
 		return fmt.Errorf("error getting vip for service '%s-%s': %s", service.Namespace, service.Name, err.Error())
 	} else if !ok {
+		if needsUpdate {
+			_, err = c.Kubernetes.CoreV1().Services(service.Namespace).Update(newservice)
+			return err
+		}
 		return nil
+	}
+
+	if needsUpdate {
+		_, err = c.Kubernetes.CoreV1().Services(service.Namespace).Update(newservice)
+		return err
 	}
 
 	service = newservice
@@ -165,6 +166,14 @@ func (c *Controller) ServiceCreatedOrUpdated(service *corev1.Service) error {
 	if c.ManagePolicy {
 		if err := c.syncServiceForPolicy(service); err != nil {
 			return fmt.Errorf("error syncing policies for service '%s-%s': %s", service.Namespace, service.Name, err.Error())
+		}
+	}
+
+	if service.Annotations[lbutil.AnnNxVIP] != service.Annotations[lbutil.AnnNxAssignedVIP] {
+		service.Annotations[lbutil.AnnNxVIP] = service.Annotations[lbutil.AnnNxAssignedVIP]
+		_, err = c.Kubernetes.CoreV1().Services(service.Namespace).Update(service)
+		if err != nil {
+			return err
 		}
 	}
 
@@ -194,7 +203,7 @@ func (c *Controller) syncServicePortForPolicy(policy fortigate.FirewallPolicy, s
 }
 
 func (c *Controller) syncService(service *corev1.Service) (err error) {
-	if service.Annotations[lbutil.AnnNxVIP] == "" {
+	if service.Annotations[lbutil.AnnNxAssignedVIP] == "" {
 		return fmt.Errorf("called syncService(%s-%s), but VIP is not set", service.Namespace, service.Name)
 	}
 
@@ -232,7 +241,7 @@ func (c *Controller) ServiceDeleted(service *corev1.Service) error {
 	name := fmt.Sprintf("%s-%s", service.Namespace, service.Name)
 	log.Debugf("processing deleted service '%s'", name)
 
-	if service.Annotations[lbutil.AnnNxVIPActiveProvider] != lbutil.AnnNxVIPProviderFortigate {
+	if service.Annotations[lbutil.AnnNxVIPActiveProvider] != AnnNxVIPProviderFortigate {
 		log.Debugf("skipping service '%s', it is managed by provider '%s'", name, service.Annotations[lbutil.AnnNxVIPActiveProvider])
 		return nil
 	}
@@ -361,7 +370,7 @@ func (c *Controller) vipFor(service *corev1.Service, port *corev1.ServicePort) f
 		Extintf:         "any",
 		ServerType:      fortigate.VIPServerTypeTcp,
 		Comment:         c.Tag,
-		Extip:           service.Annotations[lbutil.AnnNxVIP],
+		Extip:           service.Annotations[lbutil.AnnNxAssignedVIP],
 		Extport:         fmt.Sprintf("%d", port.Port),
 		Realservers:     c.realserversFor(port),
 	}
