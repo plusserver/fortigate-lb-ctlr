@@ -25,8 +25,8 @@ Then, deploy a service to manage the IP address reservation for the virtual serv
 When deploying one of those, one of the required configuration parameters is the network you are going to use for
 your virtual services.
 
-(Or, just deploy the custom resource from https://github.com/Nexinto/k8s-ipam/deploy/crd.yaml and manually provide
-IP addresses by editing the request objects, but that's not recommended.)
+(Or, just deploy the custom resource from https://github.com/Nexinto/k8s-ipam/blob/master/deploy/crd.yaml and manually provide
+IP addresses by using kubeipam, see https://github.com/Nexinto/k8s-ipam.)
 
 To run fortigate-lb-ctlr in your cluster:
 
