@@ -43,7 +43,10 @@ kubectl create secret generic fortigate-lb-ctlr \
 Depending on your Fortigate setup, use either `FORTIGATE_USER` and `FORTIGATE_PASSWORD` or `FORTIGATE_API_KEY`.
 The controller will try to use the API key first.
 
-- review and modify `deploy/configmap.yaml`. `FORTIGATE_URL` is required. See below for Then, create the configmap:
+- review and modify `deploy/configmap.yaml`. `FORTIGATE_URL` is required. See below for a description of all
+supported configuration parameters.
+
+Then, create the configmap:
 
 ```bash
 kubectl apply -f deploy/configmap.yaml
