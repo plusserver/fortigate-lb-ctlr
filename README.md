@@ -107,7 +107,7 @@ You can list those addresses using `kubectl get ipaddresses` and check details w
 ## Troubleshooting
 
 If your virtual server isn't created, first check the Events for your Service (`kubectl describe service ...`)
-and for the IP address resource (`kubcetl describe ipaddress ...`; the name for the address is the same as your service).
+and for the IP address resource (`kubectl describe ipaddress ...`; the name for the address is the same as your service).
 Then, check the logs of the controller:
 
 ```bash
