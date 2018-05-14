@@ -95,7 +95,8 @@ Annotations: ...
 ```
 (If you do not need loadbalancing for every service (of type `NodePort`), you can start the controller
 with the configuration parameter `REQUIRE_TAG=true`. The controller will not create a virtual server
-by default. Then, set the annotation `nexinto.com/req-vip` on all Services that require loadbalancing to `true`.)
+by default. Then, set the annotation `nexinto.com/req-vip` on all Services that require loadbalancing to `true`.
+The Service still needs to have type `NodePort`.)
 
 The addresses will be picked from the network you configured when you deployed one of the IP address
 management services. If you create a new Service that needs to be loadbalanced, fortigate-lb-ctlr will
