@@ -307,7 +307,9 @@ func (c *Controller) NodeCreatedOrUpdated(node *corev1.Node) error {
 	}
 
 	if ip != "" {
+		c.ActiveNodesMutex.Lock()
 		c.ActiveNodes[node.Name] = ip
+		c.ActiveNodesMutex.Unlock()
 	} else {
 		log.Errorf("did not get internal ip address for %s", node.Name)
 		c.ActiveNodesMutex.Lock()
