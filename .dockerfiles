@@ -1,2 +1,3 @@
 - image: fortigate-lb-ctlr
   path: /
+  public: true
