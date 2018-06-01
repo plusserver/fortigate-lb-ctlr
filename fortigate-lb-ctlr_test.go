@@ -142,7 +142,6 @@ func TestDefaultVip(t *testing.T) {
 		return
 	}
 	a.Equal(assigned, vip443.Extip)
-	a.Equal(assigned, vip443.Extip)
 	a.Equal(3, len(vip443.Realservers))
 	a.Equal("10.100.11.1", vip443.Realservers[0].Ip)
 	a.Equal(36123, vip443.Realservers[0].Port)

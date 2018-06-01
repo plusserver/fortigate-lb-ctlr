@@ -12,6 +12,7 @@ Tested with Fortigate Versions:
 
  * v5.4.6
  * v5.6.3
+ * v5.6.4
 
 ## Getting started
 
