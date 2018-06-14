@@ -110,6 +110,7 @@ func main() {
 	c.ActiveNodesMutex = sync.Mutex{}
 
 	c.Initialize()
+	go c.Housekeeping(true)
 	c.Start()
 }
 
@@ -191,7 +192,7 @@ func (c *Controller) syncServiceForPolicy(service *corev1.Service) error {
 }
 
 func (c *Controller) syncServicePortForPolicy(policy fortigate.FirewallPolicy, service *corev1.Service) error {
-	log.Debugf("syncing policy '%s'", policy.Name)
+	log.Debugf("syncing policy '%s' for service '%s/%s'", policy.Name, service.Namespace, service.Name)
 	if _, err := c.Fortigate.GetFirewallPolicyByName(policy.Name); err != nil {
 		if _, err := c.Fortigate.CreateFirewallPolicy(&policy); err != nil {
 			return fmt.Errorf("error creating policy for '%s': %s", policy.Name, err.Error())
@@ -356,6 +357,10 @@ func (c *Controller) fgName(service *corev1.Service, port *corev1.ServicePort) s
 	return fmt.Sprintf("%s-%s-%d", service.Namespace, service.Name, port.Port)
 }
 
+func (c *Controller) fgIpName(service *corev1.Service, port *corev1.ServicePort) string {
+	return fmt.Sprintf("%s:%d", service.Annotations[lbutil.AnnNxAssignedVIP], port.Port)
+}
+
 func (c *Controller) realserversFor(port *corev1.ServicePort) (realservers []fortigate.VIPRealservers) {
 	for _, nip := range c.activeNodeAddresses() {
 		realservers = append(realservers, fortigate.VIPRealservers{Ip: nip, Port: int(port.NodePort)})
@@ -387,7 +392,7 @@ func (c *Controller) vipsFor(service *corev1.Service) (vips []fortigate.VIP) {
 
 func (c *Controller) policyFor(service *corev1.Service, port *corev1.ServicePort) fortigate.FirewallPolicy {
 	return fortigate.FirewallPolicy{
-		Name:     c.fgName(service, port),
+		Name:     c.fgIpName(service, port),
 		Srcintf:  []fortigate.FirewallPolicySrcintf{{Name: "any"}},
 		Dstintf:  []fortigate.FirewallPolicyDstintf{{Name: "any"}},
 		Srcaddr:  []fortigate.FirewallPolicySrcaddr{{Name: "all"}},
