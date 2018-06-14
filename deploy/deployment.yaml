@@ -35,7 +35,7 @@ spec:
           valueFrom:
             configMapKeyRef:
               name: fortigate-lb-ctlr
-              key: FORTIGATE_URL
+              key: FORTIGATE_DEBUG
         - name: CONTROLLER_TAG
           valueFrom:
             configMapKeyRef:
